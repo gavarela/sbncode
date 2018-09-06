@@ -315,7 +315,7 @@ Covariance::Covariance(std::vector<EventSample> samples, char *configFileName) {
     // Canvases for nice histograms
     TCanvas *numu_canvas = new TCanvas("numu_canvas", "#nu_{#mu} Distribution", 950, 345),
              *nue_canvas = new TCanvas("nue_canvas", "#nu_{e} Distribution", 950, 345);
-    numu_canvas->Divide(3, 1); nue_canvas->Divide(3, 1);
+    numu_canvas->Divide(dets.size(), 1); nue_canvas->Divide(dets.size(), 1);
     
     // Get counts
     std::cout << std::endl << "Getting counts for each sample..." << std::endl;
@@ -330,7 +330,7 @@ Covariance::Covariance(std::vector<EventSample> samples, char *configFileName) {
         
         for (int u = 0; u < fNumAltUnis; u++) {
             
-            std::string name = "tempalt" + std::to_string(u+1);
+            std::string name = sample.fDet + "tempalt" + std::to_string(u+1);
             temp_count_hists.push_back(new TH1D(name.c_str(), title.c_str(), fBins[sample.fDesc].size() - 1, &fBins[sample.fDesc][0]));
             
         }
@@ -384,24 +384,12 @@ Covariance::Covariance(std::vector<EventSample> samples, char *configFileName) {
             
             for (int b = 0; b < temp_count_hists[u]->GetNbinsX(); b++) {
                 
-                double binwidth = temp_count_hists[u]->GetBinWidth(b+1), 
-                     bincontent = temp_count_hists[u]->GetBinContent(b+1);
-                temp_count_hists[u]->SetBinContent(b+1, bincontent / binwidth * fScaleTargets[sample.fDet] / sample.fScaleFactor);
+                double bincontent = temp_count_hists[u]->GetBinContent(b+1);
+                temp_count_hists[u]->SetBinContent(b+1, bincontent * fScaleTargets[sample.fDet] / sample.fScaleFactor);
                 
             }
             
         }
-        
-        // Add numu and nue hists to a canvases
-        std::vector <std::string> dets_inorder = get_dets_inorder(samples);
-        for (int d = 0; d < dets_inorder.size(); d++) {
-            if (sample.fDet == dets_inorder[d]) {
-                if (sample.fDesc == "#nu_{#mu}") { numu_canvas->cd(d+1); }
-                if (sample.fDesc == "#nu_{e}") { nue_canvas->cd(d+1); }
-            }
-        }
-        temp_count_hists[0]->SetStats(kFALSE);
-        temp_count_hists[0]->Draw("hist");
         
         // Pass onto the big histograms and get energies
         for (int h = 0; h < temp_count_hists.size(); h++) {
@@ -416,9 +404,24 @@ Covariance::Covariance(std::vector<EventSample> samples, char *configFileName) {
             std::string label = sample.fDet + " " + sample.fDesc;
             count_hists[h]->GetXaxis()->SetBinLabel(offset[o]+temp_count_hists[h]->GetNbinsX()/2, label.c_str());
             
-            //if (h != 0) { temp_count_hists[h]->Delete(); }
-            
         }
+        
+        // Add numu and nue hists to a canvases
+        std::vector <std::string> dets_inorder = get_dets_inorder(samples);
+        for (int d = 0; d < dets_inorder.size(); d++) {
+            if (sample.fDet == dets_inorder[d] && (sample.fDesc == "#nu_{#mu}" || sample.fDesc == "#nu_{e}")) {
+                
+                double binwidth = temp_count_hists[0]->GetBinWidth(b+1), 
+                     bincontent = temp_count_hists[0]->GetBinContent(b+1);
+                temp_count_hists[0]->SetBinContent(b+1, bincontent / binwidth);
+                
+                numu_canvas->cd(d+1);
+                if (sample.fDesc == "#nu_{e}") nue_canvas->cd(d+1);
+                
+            }
+        }
+        temp_count_hists[0]->SetStats(kFALSE);
+        temp_count_hists[0]->Draw("hist");
         
     }
     
