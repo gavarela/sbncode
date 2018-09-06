@@ -411,9 +411,11 @@ Covariance::Covariance(std::vector<EventSample> samples, char *configFileName) {
         for (int d = 0; d < dets_inorder.size(); d++) {
             if (sample.fDet == dets_inorder[d] && (sample.fDesc == "#nu_{#mu}" || sample.fDesc == "#nu_{e}")) {
                 
-                double binwidth = temp_count_hists[0]->GetBinWidth(b+1), 
-                     bincontent = temp_count_hists[0]->GetBinContent(b+1);
-                temp_count_hists[0]->SetBinContent(b+1, bincontent / binwidth);
+                for (int b = 0; b < temp_count_hists[0]->GetNbinsX(); b++) {
+                    double binwidth = temp_count_hists[0]->GetBinWidth(b+1), 
+                         bincontent = temp_count_hists[0]->GetBinContent(b+1);
+                    temp_count_hists[0]->SetBinContent(b+1, bincontent / binwidth);
+                }
                 
                 numu_canvas->cd(d+1);
                 if (sample.fDesc == "#nu_{e}") nue_canvas->cd(d+1);
